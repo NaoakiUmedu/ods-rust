@@ -1,5 +1,8 @@
 use std::collections::{HashSet, VecDeque};
 
+use interfaces::USet;
+mod interfaces;
+
 /// 入力を1行づつ読み、その逆順で出力せよ。
 fn t1_1_1(input: Vec<&str>) -> Vec<&str> {
     let mut rev = input.clone();
@@ -151,9 +154,70 @@ fn t_1_1_9(input: Vec<String>) -> Vec<String> {
     result
 }
 
+// T1.2
+// +1がstackのpush/-1がstackのpopに対応し、
+// Dyck wordがstackのサイズが0以上になるpushとpopの操作の並びとなる
+
+// T1.3
+// 左の括弧が出てきたら1つpush、右の括弧がでてきたらpopして、
+// 最後にスタックの要素が0こだったらOK
+
+// T1.4
+// sの中身を全部qにpopしたあとqの中身を全部sにpushすれば逆になるだけということ？？？
+
+// T1.5
+/// Bag構造体
+struct Bag<T: PartialEq> {
+    elements: Vec<T>,
+}
+impl<T: PartialEq> USet<T> for Bag<T> {
+    /// サイズ
+    fn size(&self) -> usize {
+        self.elements.len()
+    }
+    /// 値xを追加する
+    fn add(&mut self, x: T) -> bool {
+        self.elements.push(x);
+        // 重複する要素も許すため常にtrue
+        true
+    }
+    /// 値xを削除する
+    fn remove(&mut self, x: T) -> Option<T> {
+        // removeはどうすんだ？とりあえず1こだけ消すようにする
+        for i in 0..self.elements.len() {
+            if x.eq(&self.elements[i]) {
+                self.elements.remove(i);
+                return Some(x);
+            }
+        }
+        Option::from(None)
+    }
+    /// 値xを検索する
+    fn find(&self, x: T) -> Option<T> {
+        for i in 0..self.elements.len() {
+            if x.eq(&self.elements[i]) {
+                return Some(x);
+            }
+        }
+        Option::from(None)
+    }
+}
+impl<T: PartialEq> Bag<T> {
+    pub fn new() -> Self {
+        Self {
+            elements: Vec::new(),
+        }
+    }
+    pub fn find_all(self) -> Vec<T> {
+        self.elements
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::chapter1::{self};
+    use crate::chapter1::{self, Bag};
+
+    use super::interfaces::USet;
 
     #[test]
     fn t1_1_1_1() {
@@ -282,5 +346,28 @@ mod tests {
         let expect = input.len();
 
         assert_eq!(chapter1::t_1_1_9(input).len(), expect);
+    }
+
+    #[test]
+    fn t_1_5() {
+        let mut bag: Bag<i32> = Bag::new();
+        bag.add(1);
+        bag.add(1);
+        bag.add(2);
+        bag.add(3);
+        bag.add(2);
+        bag.remove(1);
+        assert_eq!(4, bag.size());
+
+        let finded = bag.find(2);
+        assert_eq!(Some(2), finded);
+        assert_eq!(None, bag.find(4));
+
+        let mut tmp = bag.find_all();
+        tmp.sort();
+        let expected = vec![1, 2, 2, 3];
+        for i in 0..tmp.len() {
+            assert_eq!(expected[i], tmp[i]);
+        }
     }
 }
